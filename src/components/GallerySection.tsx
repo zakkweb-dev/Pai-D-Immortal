@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, Plus, Trash2, X, ZoomIn } from 'lucide-react';
+import { Camera, Plus, Trash2, X, ZoomIn, Upload, Check } from 'lucide-react';
 import { GalleryItem } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 
 interface GallerySectionProps {
   galleryItems: GalleryItem[];
@@ -25,6 +26,25 @@ export default function GallerySection({
   const [tall, setTall] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const [compressing, setCompressing] = useState(false);
+  const [compressError, setCompressError] = useState('');
+
+  const handleLocalImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompressing(true);
+    setCompressError('');
+    try {
+      const compressedDataUrl = await compressImage(file, 600, 600, 0.7);
+      setSrc(compressedDataUrl);
+    } catch (err: any) {
+      console.error(err);
+      setCompressError(err.message || 'Gagal memproses gambar.');
+    } finally {
+      setCompressing(false);
+    }
+  };
 
   const handleCreatePhoto = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,16 +124,48 @@ export default function GallerySection({
                 Baru: Tambah Kenangan Foto
               </h3>
               <form onSubmit={handleCreatePhoto} className="flex flex-col gap-3 text-xs">
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-[#127054] dark:text-gold-soft uppercase">Link/URL Foto</label>
-                  <input
-                    type="url"
-                    required
-                    placeholder="https://images.unsplash.com/photo-..."
-                    value={src}
-                    onChange={(e) => setSrc(e.target.value)}
-                    className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-white dark:bg-emerald-deep/40 text-[#0a3d2e] dark:text-white focus:outline-none focus:ring-1"
-                  />
+                <div className="flex flex-col gap-2 b-2 border-b border-zinc-100 dark:border-white/5 pb-3">
+                  <div className="flex justify-between items-center">
+                    <label className="font-bold text-[#127054] dark:text-gold-soft uppercase">Sumber Berkas/Link Foto</label>
+                    <span className="text-[9px] text-[#0a3d2e]/60 dark:text-gold-soft/60 italic">Bisa upload langsung / pakai link</span>
+                  </div>
+
+                  {/* Local file selector */}
+                  <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-dashed border-gold-classic/30 bg-gold-classic/5 dark:bg-white/5">
+                    <p className="text-[10px] text-[#0a3d2e] dark:text-white font-semibold">1. Unggah Langsung dari Laptop / HP:</p>
+                    <label className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-deep text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-emerald-medium transition-colors shadow">
+                      <Upload className="w-3.5 h-3.5" />
+                      {compressing ? 'Memproses Berkas...' : 'Pilih File / Foto Kamera'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLocalImageChange}
+                        disabled={compressing}
+                        className="hidden"
+                      />
+                    </label>
+                    {compressError && (
+                      <p className="text-[9px] text-red-500 font-semibold">{compressError}</p>
+                    )}
+                    {src.startsWith('data:image/') && (
+                      <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Foto berhasil dimuat dari berkas lokal!
+                      </p>
+                    )}
+                  </div>
+
+                  {/* URL fallback */}
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] text-[#0a3d2e] dark:text-white font-semibold">2. Atau Masukkan Link/URL Foto (Opsional jika sudah memilih file):</p>
+                    <input
+                      type="url"
+                      required={!src}
+                      placeholder="https://alamatlink.com/foto.jpg"
+                      value={src.startsWith('data:image/') ? '' : src}
+                      onChange={(e) => setSrc(e.target.value)}
+                      className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-white dark:bg-emerald-deep/40 text-[#0a3d2e] dark:text-white focus:outline-none focus:ring-1"
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="font-bold text-[#127054] dark:text-gold-soft uppercase">Keterangan Foto</label>
@@ -209,9 +261,11 @@ export default function GallerySection({
                   src={img.src}
                   alt={img.caption}
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
+                    // Fail gracefully by serving a high quality fallback icon/image rather than hiding the block
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop';
                   }}
                 />
 
@@ -269,7 +323,11 @@ export default function GallerySection({
               <img
                 src={galleryItems[lightboxIndex]?.src}
                 alt={galleryItems[lightboxIndex]?.caption}
+                referrerPolicy="no-referrer"
                 className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop';
+                }}
               />
               <p className="text-center font-display font-black text-sm sm:text-base text-gold-soft drop-shadow px-4 max-w-xl">
                 {galleryItems[lightboxIndex]?.caption}

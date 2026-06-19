@@ -538,6 +538,7 @@ export default function App() {
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         user={user}
+        studentProfile={claimedProfile}
         isAdmin={isAdmin}
         onLoginClick={() => setShowLoginModal(true)}
         onLogoutClick={handleLogout}

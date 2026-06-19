@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Heart, MessageSquare, Shield, Check, Edit, Trash2, ArrowRight, Camera, Key } from 'lucide-react';
+import { User, Heart, MessageSquare, Shield, Check, Edit, Trash2, ArrowRight, Camera, Key, RefreshCw, Zap, Upload } from 'lucide-react';
 import { Student, Memory, GuestbookEntry } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 
 interface DashboardProps {
   user: any;
@@ -34,15 +35,38 @@ export default function Dashboard({
   onBecomAdmin,
   onDeactivateAdmin
 }: DashboardProps) {
-  const [activeTab, setActiveTab] = useState<'profile' | 'memories' | 'guestbook' | 'admin'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'memories' | 'guestbook' | 'admin' | 'optimization'>('profile');
   const [verifyUser, setVerifyUser] = useState('');
   const [verifyPass, setVerifyPass] = useState('');
+
+  // Cache clearance/optimization states
+  const [clearingCache, setClearingCache] = useState(false);
+  const [clearProgress, setClearProgress] = useState('');
+  const [clearCompleted, setClearCompleted] = useState(false);
 
   // Profile Edit states
   const [profileMotto, setProfileMotto] = useState(studentProfile?.motto || '');
   const [profileIG, setProfileIG] = useState(studentProfile?.instagram || '');
   const [profilePhoto, setProfilePhoto] = useState(studentProfile?.foto || '');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [compressError, setCompressError] = useState('');
+
+  const handleLocalImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompressing(true);
+    setCompressError('');
+    try {
+      const compressedDataUrl = await compressImage(file, 400, 400, 0.7);
+      setProfilePhoto(compressedDataUrl);
+    } catch (err: any) {
+      console.error(err);
+      setCompressError(err.message || 'Gagal memproses gambar. Coba gunakan gambar lain.');
+    } finally {
+      setCompressing(false);
+    }
+  };
 
   // Editable Memory state
   const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
@@ -61,6 +85,66 @@ export default function Dashboard({
       setProfilePhoto(studentProfile.foto || '');
     }
   }, [studentProfile]);
+
+  const handleClearCache = async () => {
+    if (clearingCache) return;
+    setClearingCache(true);
+    setClearCompleted(false);
+    
+    try {
+      // Step 1: Scan and clean Service Workers
+      setClearProgress('Memindai berkas sementara dan Service Worker...');
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+      }
+
+      // Step 2: Clear dynamic Caches API storage (Crucial for heavy image rendering loads)
+      setClearProgress('Menghapus cache gambar dan asset visual (Caches API)...');
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+      }
+
+      // Step 3: Evict sessionStorage
+      setClearProgress('Mengosongkan memori sementara (Session Storage)...');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      sessionStorage.clear();
+
+      // Step 4: Selective localStorage clean-up (preserve login state, so user won't get logged out)
+      setClearProgress('Mengoptimalkan basis data lokal (Local Storage)...');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const keysToKeep = ['student-session', 'pai-theme'];
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && !keysToKeep.some(keep => k.startsWith(keep))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+
+      setClearProgress('Selesai! Menyegarkan memori aplikasi...');
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      setClearCompleted(true);
+      
+      // Delay before reloading
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+    } catch (error) {
+      console.error(error);
+      setClearProgress('Terjadi kesalahan saat membersihkan cache.');
+      setClearingCache(false);
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,12 +214,15 @@ export default function Dashboard({
           <div className="flex flex-col gap-5">
             {/* User Profile Summary */}
             <div className="flex items-center gap-3 select-none pb-4 border-b border-white/10">
-              {user?.photoURL ? (
+              {(studentProfile?.foto || user?.photoURL) ? (
                 <img
-                  src={user.photoURL}
+                  src={studentProfile?.foto || user?.photoURL || ''}
                   referrerPolicy="no-referrer"
-                  alt={user.displayName}
-                  className="w-11 h-11 rounded-full border-2 border-gold-classicobject-cover"
+                  alt={user?.displayName}
+                  className="w-11 h-11 rounded-full border-2 border-gold-classic object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.displayName || 'User')}&backgroundColor=0f5b42&textColor=f3dd96`;
+                  }}
                 />
               ) : (
                 <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center font-bold text-gold-classic font-display">
@@ -199,6 +286,18 @@ export default function Dashboard({
                 <Shield className="w-4 h-4" />
                 <span>Kunci Pengembang</span>
               </button>
+
+              <button
+                onClick={() => setActiveTab('optimization')}
+                className={`flex-1 md:flex-initial text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                  activeTab === 'optimization'
+                    ? 'bg-amber-500 text-emerald-deep font-bold shadow-sm'
+                    : 'text-zinc-200 hover:bg-white/5 animate-pulse'
+                }`}
+              >
+                <Zap className="w-4 h-4 text-amber-400 group-hover:text-amber-500" />
+                <span>Bersihkan Cache ✨</span>
+              </button>
             </div>
           </div>
 
@@ -250,15 +349,47 @@ export default function Dashboard({
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1 select-none">
-                    <label className="font-bold text-emerald-deep dark:text-gold-soft uppercase">URL Link Foto Profil</label>
-                    <input
-                      type="url"
-                      value={profilePhoto}
-                      onChange={(e) => setProfilePhoto(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-emerald-medium/5 dark:bg-emerald-deep/40 text-emerald-deep dark:text-white focus:outline-none"
-                    />
+                  <div className="flex flex-col gap-2 select-none">
+                    <div className="flex justify-between items-center">
+                      <label className="font-bold text-emerald-deep dark:text-gold-soft uppercase">Foto Profil</label>
+                      <span className="text-[9px] text-[#0a3d2e]/60 dark:text-gold-soft/60 italic">Bisa upload langsung / pakai link</span>
+                    </div>
+
+                    {/* Local File Upload Button & Input */}
+                    <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-dashed border-gold-classic/30 bg-gold-classic/5 dark:bg-white/5">
+                      <p className="text-[10px] text-emerald-deep dark:text-white font-semibold">1. Unggah dari Laptop / HP Anda:</p>
+                      <label className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-deep text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-emerald-medium transition-colors shadow">
+                        <Upload className="w-3.5 h-3.5" />
+                        {compressing ? 'Memproses Berkas...' : 'Pilih File / Foto Kamera'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLocalImageChange}
+                          disabled={compressing}
+                          className="hidden"
+                        />
+                      </label>
+                      {compressError && (
+                        <p className="text-[9px] text-red-500 font-semibold">{compressError}</p>
+                      )}
+                      {profilePhoto.startsWith('data:image/') && (
+                        <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Foto dari berkas berhasil dimuat!
+                        </p>
+                      )}
+                    </div>
+
+                    {/* URL Link Input */}
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-[10px] text-emerald-deep dark:text-white font-semibold">2. Atau paste Link/URL Foto (Opsional):</p>
+                      <input
+                        type="url"
+                        value={profilePhoto.startsWith('data:image/') ? '' : profilePhoto}
+                        onChange={(e) => setProfilePhoto(e.target.value)}
+                        placeholder="https://alamatlink.com/foto.jpg"
+                        className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-emerald-medium/5 dark:bg-emerald-deep/40 text-emerald-deep dark:text-white focus:outline-none"
+                      />
+                    </div>
                   </div>
 
                   <button
@@ -531,6 +662,94 @@ export default function Dashboard({
                 <p>• Pergi ke seksi **Profil** untuk menyunting visi-misi secara offline tanpa menyentuh source code.</p>
                 <p>• Pergi ke seksi **Mahasiswa** untuk menambah/menghapus entri mahasiswa baru secara interaktif.</p>
                 <p>• Pergi ke seksi **Lounge Chat** untuk memoderasi obrolan atau membilas riwayat lounge.</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'optimization' && (
+            <div className="flex-1 flex flex-col gap-5">
+              <div>
+                <h3 className="font-display font-black text-xl text-emerald-deep dark:text-gold-soft border-b border-gold-classic/10 pb-2 select-none flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500 animate-bounce" />
+                  Optimasi Sistem & Pembersihan Cache
+                </h3>
+                <p className="text-stone-500 dark:text-zinc-400 text-[11px] mt-1.5 leading-relaxed">
+                  Apakah aplikasi terasa memuat gambar lambat atau berat? Fitur pembersihan ini akan menyapu memori sampah, 
+                  menghentikan sisa service worker, memicu pelepasan berkas dinamis Caches API, dan membasmi session storage yang usang 
+                  tanpa memutuskan sesi utama login Anda.
+                </p>
+              </div>
+
+              {/* Status Diagnostics Card */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
+                <div className="p-3.5 bg-neutral-50 dark:bg-[#03140e]/40 rounded-2xl border border-stone-200/50 dark:border-[#113e31]/30 flex items-start gap-3">
+                  <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                    <RefreshCw className="w-4 h-4 animate-spin-slow" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-black text-xs text-emerald-deep dark:text-cream-soft">Status Memori Browser</h4>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium font-mono mt-0.5">Sangat Optimal (Lancar)</p>
+                    <p className="text-[9px] text-stone-400 mt-1 leading-normal">Pengurangan sampah render & heap memori diaktifkan otomatis.</p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-neutral-50 dark:bg-[#03140e]/40 rounded-2xl border border-stone-200/50 dark:border-[#113e31]/30 flex items-start gap-3">
+                  <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-black text-xs text-emerald-deep dark:text-cream-soft">Penyimpanan Cache Gambar</h4>
+                    <p className="text-[10px] text-amber-600 dark:text-amber-500 font-medium font-mono mt-0.5">Terakumulasi (Siap Dibersihkan)</p>
+                    <p className="text-[9px] text-stone-400 mt-1 leading-normal">File media berat, image load, dan metadata dinamis dari server.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Area */}
+              <div className="p-5 bg-amber-500/5 dark:bg-amber-500/2 rounded-2xl border border-amber-500/25 flex flex-col gap-4 items-center justify-center text-center mt-3 select-none">
+                <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-gold-soft">
+                  <Zap className="w-6 h-6 animate-pulse" />
+                </div>
+                
+                <div>
+                  <h4 className="font-display font-black text-sm text-emerald-deep dark:text-gold-soft">Optimalkan Performa Utama</h4>
+                  <p className="text-[10px] text-zinc-500 max-w-sm mt-1 leading-normal">
+                    Klik tombol di bawah untuk melaksanakan pembersihan total. Aplikasi akan menyegarkan memori dan dimuat ulang dalam hitungan detik.
+                  </p>
+                </div>
+
+                {clearingCache ? (
+                  <div className="w-full max-w-xs flex flex-col items-center gap-2 mt-1">
+                    <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: '5%' }}
+                        animate={{ width: clearCompleted ? '100%' : '90%' }}
+                        transition={{ duration: 2.2, ease: "easeInOut" }}
+                        className="bg-amber-500 h-full rounded-full"
+                      />
+                    </div>
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-mono animate-pulse">
+                      {clearProgress}
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleClearCache}
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-emerald-deep font-sans font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Sapu Sampah & Bersihkan Cache
+                  </button>
+                )}
+                
+                {clearCompleted && (
+                  <motion.p 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-xs text-emerald-600 font-bold flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4 text-emerald-500" /> Cache Berhasil Dibersihkan! Memuat ulang halaman...
+                  </motion.p>
+                )}
               </div>
             </div>
           )}

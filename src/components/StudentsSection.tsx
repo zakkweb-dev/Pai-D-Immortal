@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Plus, Edit, Trash2, Heart, Award, ArrowRight, UserCheck, X } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Heart, Award, ArrowRight, UserCheck, X, Upload, Check } from 'lucide-react';
 import { Student } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 
 interface StudentsSectionProps {
   students: Student[];
@@ -32,6 +33,25 @@ export default function StudentsSection({
   const [instagram, setInstagram] = useState('');
   const [foto, setFoto] = useState('');
 
+  const [compressing, setCompressing] = useState(false);
+  const [compressError, setCompressError] = useState('');
+
+  const handleLocalImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCompressing(true);
+    setCompressError('');
+    try {
+      const compressedDataUrl = await compressImage(file, 400, 400, 0.7);
+      setFoto(compressedDataUrl);
+    } catch (err: any) {
+      console.error(err);
+      setCompressError(err.message || 'Gagal memproses gambar. Coba gunakan berkas lain.');
+    } finally {
+      setCompressing(false);
+    }
+  };
+
   const filteredStudents = students.filter(
     (s) =>
       s.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,6 +65,8 @@ export default function StudentsSection({
     setMotto('');
     setInstagram('');
     setFoto('');
+    setCompressError('');
+    setCompressing(false);
     setShowModal(true);
   };
 
@@ -55,6 +77,8 @@ export default function StudentsSection({
     setMotto(student.motto || '');
     setInstagram(student.instagram || '');
     setFoto(student.foto || '');
+    setCompressError('');
+    setCompressing(false);
     setShowModal(true);
   };
 
@@ -231,6 +255,9 @@ export default function StudentsSection({
                       referrerPolicy="no-referrer"
                       loading="lazy"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(st.nama)}&backgroundColor=0f5b42&textColor=f3dd96`;
+                      }}
                     />
                   </div>
                 ) : (
@@ -348,23 +375,54 @@ export default function StudentsSection({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 select-none">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-emerald-deep dark:text-gold-soft uppercase">Username Instagram</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: @ali_husain"
-                      value={instagram}
-                      onChange={(e) => setInstagram(e.target.value)}
-                      className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-white/50 dark:bg-emerald-deep/40 text-emerald-deep dark:text-white focus:outline-none focus:ring-1 focus:ring-gold-classic"
-                    />
+                <div className="flex flex-col gap-1 select-none">
+                  <label className="text-[11px] font-bold text-emerald-deep dark:text-gold-soft uppercase">Username Instagram</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: @ali_husain"
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-white/50 dark:bg-emerald-deep/40 text-emerald-deep dark:text-white focus:outline-none focus:ring-1 focus:ring-gold-classic"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 select-none border-t border-gold-classic/10 pt-2.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[11px] font-bold text-emerald-deep dark:text-gold-soft uppercase">Foto Mahasiswa</label>
+                    <span className="text-[9px] text-[#0a3d2e]/60 dark:text-gold-soft/60 italic">Bisa upload langsung / pakai link</span>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-emerald-deep dark:text-gold-soft uppercase">URL Foto (Opsional)</label>
+
+                  {/* Local file upload or camera */}
+                  <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-dashed border-gold-classic/30 bg-gold-classic/5 dark:bg-white/5">
+                    <p className="text-[10px] text-emerald-deep dark:text-white font-semibold">1. Unggah dari Laptop / HP Anda:</p>
+                    <label className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-deep text-white text-xs font-bold rounded-lg cursor-pointer hover:bg-emerald-medium transition-colors shadow">
+                      <Upload className="w-3.5 h-3.5" />
+                      {compressing ? 'Memproses Berkas...' : 'Pilih File / Foto Kamera'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLocalImageChange}
+                        disabled={compressing}
+                        className="hidden"
+                      />
+                    </label>
+                    {compressError && (
+                      <p className="text-[9px] text-red-500 font-semibold">{compressError}</p>
+                    )}
+                    {foto.startsWith('data:image/') && (
+                      <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Foto berhasil dimuat!
+                      </p>
+                    )}
+                  </div>
+
+                  {/* URL fallback */}
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-[10px] text-emerald-deep dark:text-white font-semibold">2. Atau paste Link/URL Foto (Opsional):</p>
                     <input
                       type="url"
-                      placeholder="Link foto eksternal"
-                      value={foto}
+                      placeholder="https://alamatlink.com/foto.jpg"
+                      value={foto.startsWith('data:image/') ? '' : foto}
                       onChange={(e) => setFoto(e.target.value)}
                       className="w-full text-xs font-sans p-2 rounded-lg border border-gold-classic/20 bg-white/50 dark:bg-emerald-deep/40 text-emerald-deep dark:text-white focus:outline-none focus:ring-1 focus:ring-gold-classic"
                     />

@@ -230,7 +230,11 @@ export default function ChatSection({
                   <img
                     src={msg.senderPhoto || senderAvatar}
                     alt={msg.senderName}
+                    referrerPolicy="no-referrer"
                     className="w-8 h-8 rounded-full border border-gold-classic/20 object-cover flex-shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.src = senderAvatar;
+                    }}
                   />
                   <div className="flex flex-col gap-0.5">
                     <span className={`text-[9px] font-bold text-zinc-400 ${isMe ? 'text-right' : 'text-left'}`}>

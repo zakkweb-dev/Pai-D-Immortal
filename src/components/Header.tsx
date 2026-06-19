@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sun, Moon, Menu, X, LogIn, LogOut, User, Bell, Shield } from 'lucide-react';
 import logoPath from '../assets/images/logo_1781851970753.jpg';
+import { Student } from '../types';
 
 interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   user: any; // User object from Firebase auth
+  studentProfile?: Student | null;
   isAdmin: boolean;
   onLoginClick: () => void;
   onLogoutClick: () => void;
@@ -21,6 +23,7 @@ export default function Header({
   darkMode,
   onToggleDarkMode,
   user,
+  studentProfile,
   isAdmin,
   onLoginClick,
   onLogoutClick,
@@ -130,12 +133,15 @@ export default function Header({
                 className="flex items-center gap-1.5 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer text-xs"
                 title={`${user.displayName || 'Akun'} - Klik untuk buka Dashboard`}
               >
-                {user.photoURL ? (
+                {(studentProfile?.foto || user.photoURL) ? (
                   <img
-                    src={user.photoURL}
+                    src={studentProfile?.foto || user.photoURL}
                     alt={user.displayName || 'Avatar'}
                     referrerPolicy="no-referrer"
                     className="w-6 h-6 rounded-full border border-gold-classic/30 object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.displayName || 'User')}&backgroundColor=0f5b42&textColor=f3dd96`;
+                    }}
                   />
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-emerald-medium/20 text-emerald-deep dark:text-gold-soft flex items-center justify-center font-bold text-[10px] border border-gold-classic/20">
