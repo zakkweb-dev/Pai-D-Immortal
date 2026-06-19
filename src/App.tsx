@@ -25,6 +25,7 @@ import {
 import { db, auth, OperationType, handleFirestoreError } from './firebase';
 import { seedDatabaseIfNeeded } from './utils/seedData';
 import { ClassSettings, Student, Memory, GuestbookEntry, ChatMessage, NotificationItem, GalleryItem } from './types';
+import logoPath from './assets/images/logo_1781851970753.jpg';
 
 // Importing Custom Components
 import Header from './components/Header';
@@ -849,9 +850,9 @@ export default function App() {
               </button>
 
               <div className="text-center pt-2">
-                <span className="brand-mark w-12 h-12 rounded-full inline-flex items-center justify-center text-gold-soft font-display font-extrabold text-2xl mb-2">
-                  ☾
-                </span>
+                <div className="w-12 h-12 rounded-full overflow-hidden inline-flex items-center justify-center border border-gold-soft/30 bg-[#113e31]/20 dark:bg-white/10 mb-2">
+                  <img src={logoPath} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </div>
                 <h3 className="font-display font-black text-lg text-emerald-deep dark:text-gold-soft uppercase tracking-tight">
                   Akses Admin Utama
                 </h3>
@@ -899,7 +900,9 @@ export default function App() {
       <footer className="bg-[#02140e] dark:bg-[#010906] text-cream-soft py-12 border-t border-[#113e31] select-none">
         <div className="max-w-7xl mx-auto px-4 text-center flex flex-col items-center gap-4">
           <div className="flex items-center gap-2 font-display font-black text-xl">
-            <span className="text-gold-classic text-2xl">☾</span>
+            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center border border-gold-soft/30 bg-white/10">
+              <img src={logoPath} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            </div>
             PAI D <em className="not-italic text-[#dac17d] font-extrabold tracking-wider">IMMORTAL</em>
           </div>
           <p className="font-display text-sm text-[#dac17d]/90 tracking-wider font-semibold">Jejak Ukhuwah, Kenangan Abadi</p>

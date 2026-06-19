@@ -58,3 +58,4 @@ export interface GalleryItem {
   createdAt?: any;
   addedBy?: string;
 }
+

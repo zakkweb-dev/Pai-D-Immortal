@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sun, Moon, Menu, X, LogIn, LogOut, User, Bell, Shield } from 'lucide-react';
+import logoPath from '../assets/images/logo_1781851970753.jpg';
 
 interface HeaderProps {
   darkMode: boolean;
@@ -58,8 +59,8 @@ export default function Header({
           onClick={() => handleNavClick('beranda')}
           className="flex items-center gap-2 cursor-pointer select-none"
         >
-          <div className="brand-mark w-9 h-9 rounded-full flex items-center justify-center text-gold-soft font-display font-extrabold text-lg">
-            ☾
+          <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-[#113e31]/20 dark:bg-white/10 border border-gold-soft/30 shadow-inner">
+            <img src={logoPath} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <span className="font-display font-black text-emerald-deep dark:text-cream-soft tracking-tight text-sm sm:text-base">
             PAI D <em className="not-italic text-gold-classic font-bold">IMMORTAL</em>
