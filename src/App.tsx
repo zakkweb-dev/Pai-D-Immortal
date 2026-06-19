@@ -145,8 +145,12 @@ export default function App() {
       snap.forEach((d) => {
         list.push({ id: d.id, ...d.data() } as Student);
       });
-      // Sort alphabetically by name
-      list.sort((a, b) => a.nama.localeCompare(b.nama));
+      // Sort sequentially by NIM (Nomor Induk Mahasiswa)
+      list.sort((a, b) => {
+        const nimA = a.nim || '';
+        const nimB = b.nim || '';
+        return nimA.localeCompare(nimB, undefined, { numeric: true, sensitivity: 'base' });
+      });
       setStudents(list);
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'students');

@@ -10,34 +10,7 @@ export const DEFAULT_SETTINGS: ClassSettings = {
   mottoKelas: "Bersama kita tumbuh, bersama kita bersinar — PAI D IMMORTAL, kenangan yang tak pernah padam."
 };
 
-export const INITIAL_STUDENTS: Omit<Student, 'id'>[] = [
-  { nama: 'Ahmad Fauzi', nim: '30100123001', foto: '', instagram: '', motto: '"Ilmu adalah cahaya, akhlak adalah mahkotanya."', ownerId: null },
-  { nama: 'Aisyah Ramadhani', nim: '30100123002', foto: '', instagram: '', motto: '"Belajar tanpa henti, bersyukur tanpa batas."', ownerId: null },
-  { nama: 'Alif Nur Rahman', nim: '30100123003', foto: '', instagram: '', motto: '"Setiap langkah adalah ibadah."', ownerId: null },
-  { nama: 'Annisa Fitria', nim: '30100123004', foto: '', instagram: '', motto: '"Sabar dan syukur adalah senjata terkuat."', ownerId: null },
-  { nama: 'Al Rasyak Izwar', nim: '20100123101', foto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop', motto: 'Hidup Cuman Sekali Jadilah Orang Baik, Leave Discrimination Humanity is Number One.', ownerId: null },
-  { nama: 'Dian Permata', nim: '30100123007', foto: '', instagram: '', motto: '"Cinta ilmu, cinta umat."', ownerId: null },
-  { nama: 'Dwi Ananda', nim: '30100123008', foto: '', instagram: '', motto: '"Gagal bukan akhir, bangkit adalah keharusan."', ownerId: null },
-  { nama: 'Fadillah Yusuf', nim: '30100123009', foto: '', instagram: '', motto: '"Tuntutlah ilmu dari buaian hingga liang lahat."', ownerId: null },
-  { nama: 'Fatimah Az-Zahra', nim: '30100123010', foto: '', instagram: '', motto: '"Cantik bukan dari tampilan, tapi dari hati."', ownerId: null },
-  { nama: 'Hasan Basri', nim: '30100123011', foto: '', instagram: '', motto: '"Berilmu dan berakhlak mulia."', ownerId: null },
-  { nama: 'Husain Abdullah', nim: '30100123012', foto: '', instagram: '', motto: '"Keberhasilan dimulai dari niat yang benar."', ownerId: null },
-  { nama: 'Indah Lestari', nim: '30100123013', foto: '', instagram: '', motto: '"Satu tujuan, satu langkah, satu ukhuwah."', ownerId: null },
-  { nama: 'Irfan Hakim', nim: '30100123014', foto: '', instagram: '', motto: '"Bukan seberapa cepat, tapi seberapa kuat."', ownerId: null },
-  { nama: 'Khalid Munir', nim: '30100123015', foto: '', instagram: '', motto: '"Doa adalah senjata orang mukmin."', ownerId: null },
-  { nama: 'Laila Sari', nim: '30100123016', foto: '', instagram: '', motto: '"Wanita terbaik adalah yang paling bermanfaat."', ownerId: null },
-  { nama: 'Kamil Tandialla', nim: '20110123111', foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop', motto: '"Hidup Bukan Saling Mendahului, Bermimpilah Sendiri-sendiri"', ownerId: null },
-  { nama: 'Nadia Putri', nim: '30100123018', foto: '', instagram: '', motto: '"Setiap hari adalah kesempatan baru untuk berbuat baik."', ownerId: null },
-  { nama: 'Naufal Ibrahim', nim: '30100123019', foto: '', instagram: '', motto: '"Ilmu tanpa amal seperti pohon tanpa buah."', ownerId: null },
-  { nama: 'Nur Aini', nim: '30100123020', foto: '', instagram: '', motto: '"Hati yang bersih adalah rumah Allah."', ownerId: null },
-  { nama: 'Qori Amalia', nim: '30100123021', foto: '', instagram: '', motto: '"Al-Quran adalah pedoman hidup."', ownerId: null },
-  { nama: 'Rahmat Hidayah', nim: '30100123022', foto: '', instagram: '', motto: '"Kerja keras + doa = sukses dunia akhirat."', ownerId: null },
-  { nama: 'Reza Maulana', nim: '30100123023', foto: '', instagram: '', motto: '"Jangan takut bermimpi besar."', ownerId: null },
-  { nama: 'Salma Aulia', nim: '30100123024', foto: '', instagram: '', motto: '"Perempuan cerdas, keluarga bahagia, umat sejahtera."', ownerId: null },
-  { nama: 'Muh Riang Saputra', nim: '20100123119', foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop', motto: '"Tetap Berusaha Menjadi Pribadi Yang Riang Gembiira, Sebab Hidup terlalu Singkat Untuk Dihabiskan Dengan Keluh Kesah dan Penyesalan"', ownerId: null },
-  { nama: 'Umar Faruq', nim: '30100123026', foto: '', instagram: '', motto: '"Tegas dalam kebenaran, lembut dalam pergaulan."', ownerId: null },
-  { nama: 'Zulfikri Anwar', nim: '30100123027', foto: '', instagram: '', motto: '"PAI D IMMORTAL — satu jiwa, satu tujuan."', ownerId: null },
-];
+export const INITIAL_STUDENTS: Omit<Student, 'id'>[] = [];
 
 export const INITIAL_GALLERY: Omit<GalleryItem, 'id'>[] = [
   { src: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop', caption: 'Kebersamaan PAI D 2023 di Kampus', tall: false },
@@ -50,7 +23,7 @@ export const INITIAL_GALLERY: Omit<GalleryItem, 'id'>[] = [
 
 export async function seedDatabaseIfNeeded(db: Firestore) {
   try {
-    // 1. Check Students
+    // 1. Check Students and clean any existing legacy dummy records
     const studentsCol = collection(db, 'students');
     let studentsSnap;
     try {
@@ -59,9 +32,38 @@ export async function seedDatabaseIfNeeded(db: Firestore) {
       return handleFirestoreError(error, OperationType.GET, 'students');
     }
 
-    if (studentsSnap.empty) {
+    const DUMMY_STUDENT_NAMES = [
+      'Ahmad Fauzi', 'Aisyah Ramadhani', 'Alif Nur Rahman', 'Annisa Fitria',
+      'Al Rasyak Izwar', 'Dian Permata', 'Dwi Ananda', 'Fadillah Yusuf',
+      'Fatimah Az-Zahra', 'Hasan Basri', 'Husain Abdullah', 'Indah Lestari',
+      'Irfan Hakim', 'Khalid Munir', 'Laila Sari', 'Kamil Tandialla',
+      'Nadia Putri', 'Naufal Ibrahim', 'Nur Aini', 'Qori Amalia',
+      'Rahmat Hidayah', 'Reza Maulana', 'Salma Aulia', 'Muh Riang Saputra',
+      'Umar Faruq', 'Zulfikri Anwar'
+    ];
+
+    const deleteBatch = writeBatch(db);
+    let needsDeleteCommit = false;
+    studentsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data && DUMMY_STUDENT_NAMES.includes(data.nama)) {
+        deleteBatch.delete(docSnap.ref);
+        needsDeleteCommit = true;
+      }
+    });
+
+    if (needsDeleteCommit) {
+      try {
+        await deleteBatch.commit();
+        console.log('Successfully purged legacy dummy student records from database.');
+        studentsSnap = await getDocs(studentsCol);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, 'students_cleanup');
+      }
+    }
+
+    if (studentsSnap.empty && INITIAL_STUDENTS.length > 0) {
       console.log('Seeding students...');
-      // Write in batches for high performance
       const batch = writeBatch(db);
       INITIAL_STUDENTS.forEach((student) => {
         const docRef = doc(collection(db, 'students'));
