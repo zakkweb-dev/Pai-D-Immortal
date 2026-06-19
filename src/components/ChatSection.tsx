@@ -25,7 +25,7 @@ export default function ChatSection({
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // States for student verification
   const [inputNama, setInputNama] = useState('');
@@ -34,8 +34,8 @@ export default function ChatSection({
 
   // Auto-scroll on new messages
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -142,7 +142,7 @@ export default function ChatSection({
         </div>
 
         {/* Chat Messages Log */}
-        <div className="flex-1 bg-cream-soft/20 dark:bg-black/10 overflow-y-auto p-4 flex flex-col gap-3 min-h-0">
+        <div ref={containerRef} className="flex-1 bg-cream-soft/20 dark:bg-black/10 overflow-y-auto p-4 flex flex-col gap-3 min-h-0">
           {!user ? (
             /* Locked state greeting with Student Validation form */
             <div className="h-full w-full flex items-center justify-center p-4">
@@ -253,7 +253,6 @@ export default function ChatSection({
               );
             })
           )}
-          <div ref={scrollRef} />
         </div>
 
         {/* Input Bar form if signed in */}
