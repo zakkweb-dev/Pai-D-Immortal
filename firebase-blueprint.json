@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Setting": {
+      "title": "Setting",
+      "description": "General settings and class profile content",
+      "type": "object",
+      "properties": {
+        "visi": { "type": "string" },
+        "misi": { "type": "string" },
+        "aboutProdi": { "type": "string" },
+        "mottoKelas": { "type": "string" }
+      }
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student in PAI D 2023",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "nim": { "type": "string" },
+        "motto": { "type": "string" },
+        "instagram": { "type": "string" },
+        "foto": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["nama", "nim"]
+    },
+    "Memory": {
+      "title": "Memory",
+      "description": "Memory wall post",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "angkatan": { "type": "string" },
+        "pesan": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["nama", "pesan"]
+    },
+    "Guestbook": {
+      "title": "Guestbook",
+      "description": "Guestbook message",
+      "type": "object",
+      "properties": {
+        "nama": { "type": "string" },
+        "pesan": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["nama", "pesan"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Real-time group chat message",
+      "type": "object",
+      "properties": {
+        "senderName": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderPhoto": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["senderName", "senderId", "message"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Activity announcement notification",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["title", "description", "type"]
+    },
+    "GalleryImage": {
+      "title": "GalleryImage",
+      "description": "Gallery image item metadata",
+      "type": "object",
+      "properties": {
+        "src": { "type": "string" },
+        "caption": { "type": "string" },
+        "tall": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "addedBy": { "type": "string" }
+      },
+      "required": ["src", "caption"]
+    }
+  },
+  "firestore": {
+    "settings": {
+      "schema": "Setting",
+      "description": "Class custom profiling details"
+    },
+    "students": {
+      "schema": "Student",
+      "description": "The 27 student group profiles"
+    },
+    "memories": {
+      "schema": "Memory",
+      "description": "User digital memory wall posts"
+    },
+    "guestbook": {
+      "schema": "Guestbook",
+      "description": "Guest messages book entries"
+    },
+    "chat": {
+      "schema": "Chat",
+      "description": "Real-time chat messaging records"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Activity logs for real-time update monitoring"
+    },
+    "gallery": {
+      "schema": "GalleryImage",
+      "description": "Gallery memories image storage entries"
+    }
+  }
+}

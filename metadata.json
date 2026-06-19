@@ -1,0 +1,6 @@
+{
+  "name": "PAI D IMMORTAL",
+  "description": "Portal kenangan digital mahasiswa PAI D Angkatan 2023 UIN Alauddin Makassar. Jejak Ukhuwah, Kenangan Abadi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
